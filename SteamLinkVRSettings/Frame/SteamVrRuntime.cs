@@ -29,8 +29,7 @@ public static class SteamVrRuntime
     {
         // Check launch and process identity before stopping anything. A codec switch
         // or a user restart may have replaced the session since the initial probe.
-        if (!File.Exists(Path.Combine(paths.SteamRoot, "steam.exe")))
-            throw new FileNotFoundException("Steam is unavailable. Restart SteamVR manually, then select Start monitoring.");
+        _ = CreateStartInfo(paths); // Validate the selected runtime's launcher before stopping it.
         var servers = Process.GetProcessesByName("vrserver");
         try
         {
@@ -65,10 +64,20 @@ public static class SteamVrRuntime
     }
     public static void Start(SteamPaths paths)
     {
+        using var process = Process.Start(CreateStartInfo(paths));
+    }
+
+    internal static ProcessStartInfo CreateStartInfo(SteamPaths paths)
+    {
         var file = Path.Combine(paths.SteamRoot, "steam.exe");
         if (!File.Exists(file)) throw new FileNotFoundException("Steam is unavailable. Start SteamVR manually.");
-        var info = new ProcessStartInfo(file) { UseShellExecute = false, CreateNoWindow = true };
-        info.ArgumentList.Add("-applaunch"); info.ArgumentList.Add("250820");
-        using var process = Process.Start(info);
+        var launcher = Path.Combine(paths.SteamVrRoot, "bin", "win64", "vrstartup.exe");
+        if (!File.Exists(launcher)) throw new FileNotFoundException("The selected SteamVR launcher is missing. Verify SteamVR files before reconnecting.", launcher);
+        // Steam can retain a running-app entry after a forced encoder restart and
+        // ignore -applaunch. Use Valve's runtime entry point for this installation.
+        return new ProcessStartInfo(launcher)
+        {
+            UseShellExecute = false, CreateNoWindow = true, WorkingDirectory = paths.SteamVrRoot
+        };
     }
 }

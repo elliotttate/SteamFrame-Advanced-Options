@@ -26,7 +26,12 @@ internal static class BenchmarkRuntimeRestart
                 current=await probe.SetAdvancedEncodingAsync(before.AdvancedEncoding?.Requested ?? new());
                 await BenchmarkHostConnection.ResumeAsync(preferences,host,token);
                 return current;
-            },progress,token);
+            },progress,token,resumeVideoOnce:async ct=>
+            {
+                await lease.CheckEncoderOwnershipAsync();
+                progress("SteamVR restarted without fresh video. Reconnecting the same Frame client once before measurement…");
+                await BenchmarkHostConnection.ResumeAsync(preferences,host,ct);
+            });
         var snapshot=result.Snapshot;
         if(!result.VideoResumed || expected?.RequestsRestored(snapshot)!=true ||
             snapshot.AdvancedEncoding is {PendingFlags:not 0} or {RejectedFlags:not 0} ||

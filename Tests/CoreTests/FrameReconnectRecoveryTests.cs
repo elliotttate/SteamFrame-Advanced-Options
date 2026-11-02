@@ -46,6 +46,36 @@ public class FrameReconnectRecoveryTests
         Assert.False(result.VideoResumed); Assert.Equal(1, restarts); Assert.Equal(5, reads);
     }
 
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task OptionalClientRetryIsBoundedAndNeverRestartsTheRuntimeAgain(bool recovers)
+    {
+        int reads = 0, restarts = 0, resumes = 0;
+        var result = await FrameReconnectRecovery.RunAsync(
+            () => Task.FromResult(++reads == 1 ? Old : resumes == 1 && recovers && reads > 6 ? Video : Baseline),
+            _ => { restarts++; return Task.CompletedTask; },
+            (_, _) => Task.FromResult(Baseline), _ => { }, TestContext.Current.CancellationToken,
+            videoAttempts: 3, wait: _ => Task.CompletedTask,
+            resumeVideoOnce: _ => { resumes++; return Task.CompletedTask; });
+        Assert.Equal(recovers, result.VideoResumed);
+        Assert.Equal(1, restarts);
+        Assert.Equal(1, resumes);
+        Assert.InRange(reads, 7, 9);
+    }
+
+    [Fact]
+    public async Task ClientRetryStillRejectsAReplacedRuntime()
+    {
+        int reads = 0, resumes = 0;
+        await Assert.ThrowsAsync<InvalidOperationException>(() => FrameReconnectRecovery.RunAsync(
+            () => Task.FromResult(++reads == 1 ? Old : resumes == 1 ? Baseline with { ProcessId = 30 } : Baseline),
+            _ => Task.CompletedTask, (_, _) => Task.FromResult(Baseline), _ => { }, TestContext.Current.CancellationToken,
+            videoAttempts: 1, wait: _ => Task.CompletedTask,
+            resumeVideoOnce: _ => { resumes++; return Task.CompletedTask; }));
+        Assert.Equal(1, resumes);
+    }
+
     [Fact]
     public async Task OldProcessTimeoutNeverPreparesOrRestartsAgain()
     {

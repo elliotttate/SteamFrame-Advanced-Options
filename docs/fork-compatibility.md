@@ -26,6 +26,17 @@ promise that every subsequent SteamVR update will work.
   quality request and include the last NVENC status. They no longer assert that
   a different controller caused the change. The native helper deliberately
   disables quality bias on an encoding error, which can also trip this guard.
+- Reconnects launch the selected runtime's `bin/win64/vrstartup.exe` directly,
+  validating it before stopping an existing session. During local testing,
+  `steam.exe -applaunch 250820` failed to restart the runtime after stopping it.
+  This could interrupt the first multipass change before any measurements.
+  Valve documents `vrstartup.exe` as SteamVR's entry point in the
+  [OpenVR driver documentation](https://github.com/ValveSoftware/openvr/blob/master/docs/Driver_API_Documentation.md#debugging-steamvr-with-visual-studio).
+- If video does not resume after a benchmark-owned runtime restart, the tuner
+  can reconnect the same captured headset client once without another runtime
+  restart. It checks encoder ownership before retrying and still requires fresh
+  HEVC output from the replacement process. This is bounded and happens before
+  the measurement window; no disconnected counters are combined.
 
 ## Driver identities
 
@@ -57,7 +68,7 @@ those require a real connected Frame and a complete run, including restoration.
 ## Verification on November 2, 2026
 
 The Release WinUI build and self-contained portable packaging succeeded.
-350 managed tests, seven native tests and 30 compositor assertions passed.
+355 managed tests, seven native tests and 30 compositor assertions passed.
 Three older-driver fixture tests were skipped because their required original
 files were unavailable. Both 25998080 and 25839986 patch round trips passed with
 local originals, including receipt-free recognition and corruption refusal.
@@ -65,8 +76,9 @@ The 25998080 sender fixture verified function boundaries, RTTI strings and a
 relocated instruction referencing the server global.
 
 The portable app launched and installed the new driver's exact expected patch
-with a verified matching original backup. **A complete auto tune run on 25998080
-has not yet been verified:** the Frame was unreachable through the paired SSH
-connection when the hardware check was attempted. This build must not be
-described as having completed hardware tuning until that run and restoration
-are checked.
+with a verified matching original backup. The active sender reader succeeded on
+a real connected HEVC stream from 25998080. Initial full-run attempts exposed
+the launch and client-reconnection problems above; their starting settings were
+recovered. **A complete auto tune run on 25998080 has not yet been verified.**
+This build must not be described as having completed hardware tuning until the
+full run and restoration are checked.

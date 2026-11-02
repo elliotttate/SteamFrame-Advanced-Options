@@ -4,8 +4,9 @@
 
 - Windows 11 x64
 - .NET 9 SDK
-- Visual Studio 2022 or later, or Build Tools, with **Desktop development with C++** and a
-  Windows SDK. The scripts find Visual Studio and its bundled CMake and Ninja automatically.
+- Visual Studio 2022 or later, or Build Tools, with **Desktop development with C++**
+  (including CMake), **WinUI application development build tools**, and Windows SDK
+  **10.0.22621**. The scripts find Visual Studio and its bundled CMake and Ninja automatically.
 - Python 3 on PATH, only for the receiver-diagnostics tests. They're skipped without it.
 
 The WinUI app must be built with Visual Studio's MSBuild. `dotnet build` can't build it because
@@ -42,6 +43,10 @@ When using the optional diagnostic CLI, build it against the selected app:
 The script verifies that both use the same native helper. Do not restore normal
 play with historical experiment tools: their older helper can make the app's
 update notice return after every research restart.
+
+The matching diagnostic tool accepts `--sender` to read and verify the current
+sender's synchronous/asynchronous mode. Start monitoring in the app first.
+This option never installs the helper or changes sender settings.
 
 Opening the solution in Visual Studio also works before the native helper has been built. You'll
 see a warning, and encoder monitoring stays unavailable until `Native\build.ps1` has run.

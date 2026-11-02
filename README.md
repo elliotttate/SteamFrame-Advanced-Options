@@ -1,5 +1,10 @@
 # SteamFrame Advanced Options
 
+This fork adds auto tune sender support for **SteamVR 2.18.4, build 25998080**,
+alongside the upstream 25839986 layout. See [fork compatibility and verification](docs/fork-compatibility.md).
+Unknown future drivers still require verification; the version number alone never enables private memory reads.
+**Hardware validation is pending:** the build and automated tests pass, but a full auto tune run on the new driver has not yet been confirmed.
+
 A Windows app for tuning and diagnosing **Steam Frame** streaming from a PC.
 It sets the stream's bitrate and foveation, measures what the encoder actually
 produces, records streaming faults on both the PC and the headset, and can raise

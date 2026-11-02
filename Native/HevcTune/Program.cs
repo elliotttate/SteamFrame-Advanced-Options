@@ -1,6 +1,17 @@
 using System.Text.Json;
 using SteamLinkVRSettings.Frame;
 
+if (args.Length == 1 && args[0] == "--sender")
+{
+    var observer = new EncoderProbe();
+    var snapshot = await observer.GetSnapshotAsync();
+    if (!snapshot.Installed || !snapshot.Active || snapshot.Codec != "HEVC")
+        throw new IOException("Start monitoring an active HEVC stream in the app before checking its sender.");
+    var asynchronous = await observer.ReadActiveSendModeAsync();
+    Console.WriteLine(JsonSerializer.Serialize(new { snapshot.ProcessId, AsyncSend = asynchronous }));
+    return;
+}
+
 if (args.Length == 3 && args[0] == "--timing")
 {
     if (!int.TryParse(args[1], out var seconds) || seconds is < 10 or > 300)
@@ -34,7 +45,7 @@ if (args.Length == 3 && args[0] == "--timing")
 var start = args.Length == 1 && args[0] == "--start";
 var arm = args.Length == 2 && args[0] == "--arm";
 if (!start && !arm && (args.Length is not (0 or 2) || args.Length == 2 && args[0] != "--apply"))
-    throw new ArgumentException("Use no arguments to inspect, --start to start the guarded monitor, --arm REQUEST.json before connecting, or --apply REQUEST.json");
+    throw new ArgumentException("Use no arguments to inspect, --sender to verify the active sender, --start to start the guarded monitor, --arm REQUEST.json before connecting, or --apply REQUEST.json");
 var probe = new EncoderProbe();
 var before = start || arm ? await probe.StartAsync() : await probe.GetSnapshotAsync();
 if (start)

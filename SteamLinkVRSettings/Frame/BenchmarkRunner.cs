@@ -43,6 +43,7 @@ internal sealed class BenchmarkRunner(SteamPaths paths, FramePreferences prefere
         if (lease.Pending || display.Pending) throw new IOException("An interrupted benchmark needs recovery. Use Restore starting settings first.");
         var patch = await new BitratePatcher().InspectAsync(paths.Driver);
         if (!patch.IsSupported) throw new IOException("This SteamVR driver is not supported by the benchmark monitor.");
+        ValidateModeComparison(options, patch.IsPatched);
         var owner = await new CodecController().ReadStatusAsync();
         if (owner.Live) throw new IOException("Switch back to HEVC and end the paired codec session before benchmarking.");
         await using var activity = new BenchmarkActivityLease(preferences);
@@ -405,5 +406,11 @@ internal sealed class BenchmarkRunner(SteamPaths paths, FramePreferences prefere
         }
         if(RecoveryRequired)throw new IOException(error+" Restore starting settings before applying any option.");
         return result!;
+    }
+
+    internal static void ValidateModeComparison(BenchmarkOptions options, bool patched)
+    {
+        if (!patched && (options.TestResolutions || options.TestRefreshRates))
+            throw new IOException("Resolution/refresh-rate comparison requires the 500 Mbps / HEVC 6.2 patch. Install it under Patches & Recovery and restart SteamVR, or turn off resolution and refresh-rate comparisons to test the current display mode. The patch also raises the HEVC level; lowering the bitrate alone does not do that.");
     }
 }

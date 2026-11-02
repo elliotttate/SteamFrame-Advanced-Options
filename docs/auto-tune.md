@@ -6,6 +6,8 @@ Auto tune explores concrete HEVC presets for the user's hardware and wireless li
 
 Connect the Frame to PC streaming with HEVC on an NVIDIA GPU, pair SSH under Connection, and close the VR game. SteamVR Home can remain open. The moving test room runs with the headset off your head and temporarily keeps it awake. Leave it in the normal play area with its cameras unobstructed. Avoid other GPU-heavy work during tests.
 
+In this fork, resolution/refresh-rate comparison requires the **500 Mbps / HEVC 6.2** patch under **Patches & Recovery**, followed by a SteamVR restart. This patch changes the HEVC level as well as the bitrate cap. Without it, disable both resolution and refresh-rate comparisons to test only the current display mode. The tuner checks this before changing any settings.
+
 The default search compares 1280, 1664 and 2048-pixel stream widths, also including the starting width if different, at both 90 and 120 Hz. These widths describe the packed encoder stream, not per-eye panel resolution. Single pass, quarter-resolution multipass and full-resolution multipass are compared. Disabling a width or Hz comparison retains the actual starting value. Full multipass can be omitted to shorten the search.
 
 Each recommendation shows its explicit stream width, refresh rate, bitrate target, encoder pass, quality offsets, measured video Mbps, delivered frame rate, estimated affected frames and confidence. Each is saved separately in Stream settings and has a Load button in the results. Choosing a preset does not immediately apply it.

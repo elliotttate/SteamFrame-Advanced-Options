@@ -1,0 +1,72 @@
+# Fork compatibility
+
+This fork starts from upstream v1.8.2 (845c5ac). The compatibility target is
+SteamVR 2.18.4, build 25998080. Support is tied to exact driver bytes, not a
+promise that every subsequent SteamVR update will work.
+
+## Changes
+
+- Added an independent active-sender layout for 25998080. The FEC constructor
+  moved to RVA `0xA482E0` (446 bytes); its receive handler moved to `0xA4A730`
+  (448 bytes). The server global remains at `0x179D840`. The object graph is
+  validated with RTTI, a server back-pointer, repeated pointer/mode reads and
+  process creation time. Reads never modify private sender fields.
+- The live sender routines are compared against the verified file for their
+  entire declared function ranges, instead of only their first 32 bytes.
+  Unknown hashes and mismatched live code remain rejected.
+- Added a pinned six-delta bitrate/HEVC manifest for 25998080. A patched file can
+  now be recognized even if its receipt is missing. Restoration still requires
+  its exact original backup. The independent semantic scanner must reproduce
+  the manifest in the fixture tests.
+- Default resolution/Hz comparison now checks for the HEVC 6.2 patch before
+  writing settings. A local stock-driver run failed with NVENC "Invalid Level"
+  at 2048 width / 120 Hz; merely lowering the bitrate did not raise its HEVC
+  level. Fixed-mode comparisons remain available without the patch.
+- Ownership failures now identify the changed session, encoder request or
+  quality request and include the last NVENC status. They no longer assert that
+  a different controller caused the change. The native helper deliberately
+  disables quality bias on an encoding error, which can also trip this guard.
+
+## Driver identities
+
+| 25998080 file | SHA-256 |
+| --- | --- |
+| Original | `8e7100b6b1e88d3ad6dd05f30f030dc9a69b092b64a60d35347cebb5c516b55d` |
+| 500 Mbps / HEVC 6.2 | `1c4290b55f012d7bf2c427117a25455a0ed54ee9dce15e3ab2f2ae407a8aa354` |
+
+No Valve binaries, device credentials or personal benchmark reports are
+distributed. The existing AV1/H.264 exact-build experiments are independent of
+this HEVC sender change.
+
+## Reproducing verification
+
+Build with the prerequisites in the upstream build instructions, then run
+`Build.ps1`. To exercise the external fixture checks, set these environment
+variables to local original driver files before running the tests:
+
+- `SLVR_SENDER_PUBLIC_FIXTURE`: original 25998080 driver (sender boundaries/RTTI).
+- `SLVR_PATCHER_25998080_FIXTURE`: original 25998080 driver (patch round trip,
+  receipt-free recognition, corruption and concurrent-process refusal).
+- `SLVR_PATCHER_CURRENT_FIXTURE`: original 25839986 driver (retained compatibility).
+
+Fixture tests skip explicitly when a file is absent. The managed suite also
+tests mode-comparison preflight and ownership failures without hardware.
+Unit tests cannot certify wireless reliability or complete hardware tuning;
+those require a real connected Frame and a complete run, including restoration.
+
+## Verification on November 2, 2026
+
+The Release WinUI build and self-contained portable packaging succeeded.
+350 managed tests, seven native tests and 30 compositor assertions passed.
+Three older-driver fixture tests were skipped because their required original
+files were unavailable. Both 25998080 and 25839986 patch round trips passed with
+local originals, including receipt-free recognition and corruption refusal.
+The 25998080 sender fixture verified function boundaries, RTTI strings and a
+relocated instruction referencing the server global.
+
+The portable app launched and installed the new driver's exact expected patch
+with a verified matching original backup. **A complete auto tune run on 25998080
+has not yet been verified:** the Frame was unreachable through the paired SSH
+connection when the hardware check was attempted. This build must not be
+described as having completed hardware tuning until that run and restoration
+are checked.

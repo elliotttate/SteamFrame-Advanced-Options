@@ -8,6 +8,7 @@ public sealed class BranchCompatibilityTests
     [Theory]
     [InlineData("SLVR_PATCHER_STABLE_FIXTURE", PatchManifest.SupportedStableOriginalSha256, PatchManifest.SupportedStablePatchedSha256)]
     [InlineData("SLVR_PATCHER_CURRENT_FIXTURE", BitratePatcher.SupportedCurrentOriginalSha256, BitratePatcher.SupportedCurrentPatchedSha256)]
+    [InlineData("SLVR_PATCHER_25998080_FIXTURE", PatchManifest.Supported25998080OriginalSha256, PatchManifest.Supported25998080PatchedSha256)]
     public async Task BranchPatchRoundTripPreservesOriginalAndRejectsUnsafeLayouts(string variable, string originalHash, string patchedHash)
     {
         var token = TestContext.Current.CancellationToken;
@@ -20,6 +21,8 @@ public sealed class BranchCompatibilityTests
         Assert.Equal(6, plan.Changes.Count);
         if (originalHash == PatchManifest.SupportedStableOriginalSha256)
             Assert.True(plan.DescribesSamePatch(PatchManifest.LoadStable()));
+        if (originalHash == PatchManifest.Supported25998080OriginalSha256)
+            Assert.True(plan.DescribesSamePatch(PatchManifest.Load25998080()));
         var root = Path.Combine(Path.GetTempPath(), "SteamLinkVRSettings-branch-patcher-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(root);
         try

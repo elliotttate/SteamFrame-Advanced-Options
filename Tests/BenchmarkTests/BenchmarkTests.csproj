@@ -10,6 +10,7 @@
     <Compile Include="../../SteamLinkVRSettings/Helpers/SettingDefinitions.cs" Link="SettingDefinitions.cs" />
     <EmbeddedResource Include="../../SteamLinkVRSettings/Assets/bitrate-patch.json" LogicalName="SteamLinkVRSettings.Assets.bitrate-patch.json" />
     <EmbeddedResource Include="../../SteamLinkVRSettings/Assets/bitrate-patch-stable.json" LogicalName="SteamLinkVRSettings.Assets.bitrate-patch-stable.json" />
+    <EmbeddedResource Include="../../SteamLinkVRSettings/Assets/bitrate-patch-25998080.json" LogicalName="SteamLinkVRSettings.Assets.bitrate-patch-25998080.json" />
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
     <Using Include="Xunit" />
     <PackageReference Include="xunit.v3" Version="2.0.3" />

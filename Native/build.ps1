@@ -9,7 +9,13 @@ if (-not $VisualStudioRoot) {
 if (-not $VisualStudioRoot) { throw 'No Visual Studio C++ toolchain found.' }
 $toolset = Get-ChildItem -LiteralPath (Join-Path $VisualStudioRoot 'VC\Tools\MSVC') -Directory | Sort-Object { [version]$_.Name } -Descending | Select-Object -First 1
 if (-not $toolset) { throw 'No MSVC toolset found.' }
-if (-not $WindowsSdkRoot) { $WindowsSdkRoot = (Get-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Windows Kits\Installed Roots').KitsRoot10 }
+if (-not $WindowsSdkRoot) {
+    $registeredSdk = (Get-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Windows Kits\Installed Roots' -ErrorAction SilentlyContinue).KitsRoot10
+    # A stale registry view can point at Program Files while the SDK is in (x86).
+    $WindowsSdkRoot = @($registeredSdk, (Join-Path ${env:ProgramFiles(x86)} 'Windows Kits\10')) |
+        Where-Object { $_ -and (Test-Path -LiteralPath (Join-Path $_ 'Include')) } | Select-Object -First 1
+    if (-not $WindowsSdkRoot) { throw 'No Windows SDK found. Install the Windows SDK or pass -WindowsSdkRoot.' }
+}
 $sdk = Get-ChildItem -LiteralPath (Join-Path $WindowsSdkRoot 'Include') -Directory |
     Where-Object { (Test-Path -LiteralPath (Join-Path $_.FullName 'um\Windows.h')) -and (Test-Path -LiteralPath (Join-Path $_.FullName 'ucrt\stdio.h')) } |
     Sort-Object { [version]$_.Name } -Descending | Select-Object -First 1

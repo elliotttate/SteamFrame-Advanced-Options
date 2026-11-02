@@ -1,7 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <Version>1.8.2</Version>
+    <Version>1.8.2.1</Version>
+    <InformationalVersion>1.8.2-fork.25998080</InformationalVersion>
     <Title>SteamFrame Advanced Options</Title>
     <Product>SteamFrame Advanced Options</Product>
     <TargetFramework>net9.0-windows10.0.22621.0</TargetFramework>
@@ -28,6 +29,7 @@
   <ItemGroup>
     <EmbeddedResource Include="Assets\bitrate-patch.json" />
     <EmbeddedResource Include="Assets\bitrate-patch-stable.json" />
+    <EmbeddedResource Include="Assets\bitrate-patch-25998080.json" />
     <Content Include="$(NativeHelperPath)" Link="Native\SteamFrameEncoderProbe.dll" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" Condition="Exists('$(NativeHelperPath)')" />
     <Content Include="..\Native\build\SteamFrameBenchmark.exe" Link="Native\SteamFrameBenchmark.exe" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" Condition="Exists('..\Native\build\SteamFrameBenchmark.exe')" />
   </ItemGroup>

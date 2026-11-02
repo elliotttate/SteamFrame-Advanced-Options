@@ -1,5 +1,12 @@
 # SteamFrame Advanced Options
 
+Auto tune supports **SteamVR 2.18.4, build 25998080** alongside the 25839986 layout.
+See [compatibility and verification](docs/steamvr-25998080.md).
+Unknown future drivers still require verification; the version number alone never enables private memory reads.
+**Hardware checked on November 2, 2026:** the full auto tune run completed at 100%
+with 70 trials (69 valid), three confirmed choices and successful starting-settings recovery.
+This verifies the tested SteamVR build and setup; individual games and future driver builds still need their own checks.
+
 A Windows app for tuning and diagnosing **Steam Frame** streaming from a PC.
 It sets the stream's bitrate and foveation, measures what the encoder actually
 produces, records streaming faults on both the PC and the headset, and can raise

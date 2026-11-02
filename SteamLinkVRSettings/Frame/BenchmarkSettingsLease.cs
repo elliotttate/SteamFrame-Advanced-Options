@@ -48,9 +48,7 @@ internal sealed class BenchmarkSettingsLease(SteamPaths paths, EncoderProbe prob
     {
         var data = _data ?? throw new InvalidOperationException("No benchmark recovery journal.");
         var before = await _settings.Snapshot();
-        if (before.Generation != data.Generation || before.PairedCodecTrialPresent || before.EncodingPolicy?.Requested != data.ExpectedPolicy ||
-            data.ExpectedQuality is { } expectedQuality && !expectedQuality.Matches(before))
-            throw new IOException("Another session or encoder controller changed the stream.");
+        ValidateEncoderOwnership(data, before);
         var live = await _settings.Read();
         if (Keys.Any(k => !MatchesControl(k,live,data.Expected,data.ExpectedAutomaticOwner))) throw new IOException("Stream settings changed outside the benchmark.");
         var writes = new Dictionary<string, JsonElement>(live)
@@ -164,9 +162,22 @@ internal sealed class BenchmarkSettingsLease(SteamPaths paths, EncoderProbe prob
         if(_beginFailed)throw new IOException("This instance does not own the benchmark journal.");
         var data=_data ??= await ReadDataAsync();
         var snapshot=await _settings.Snapshot();
-        if(!snapshot.Installed || snapshot.Generation!=data.Generation || snapshot.PairedCodecTrialPresent ||
-            snapshot.EncodingPolicy?.Requested!=data.ExpectedPolicy || data.ExpectedQuality is {} quality && !quality.Matches(snapshot))
-            throw new IOException("Another session or encoder controller changed the stream.");
+        ValidateEncoderOwnership(data, snapshot);
+    }
+    // Report the failed invariant without claiming that another application caused it.
+    // A failed encoder reconfiguration can also replace/reset the helper's state.
+    internal static void ValidateEncoderOwnership(BenchmarkLeaseData data, EncoderSnapshot snapshot)
+    {
+        string? reason = !snapshot.Installed ? "The encoder monitor is no longer installed."
+            : snapshot.Generation != data.Generation ? $"The encoder session changed (expected {data.Generation}, observed {snapshot.Generation})."
+            : snapshot.PairedCodecTrialPresent ? "A paired codec session now owns the encoder."
+            : snapshot.EncodingPolicy?.Requested != data.ExpectedPolicy
+                ? $"The encoder request changed (expected {data.ExpectedPolicy.Description}; observed {snapshot.EncodingPolicy?.Requested.Description ?? "unavailable"})."
+            : data.ExpectedQuality is { } quality && !quality.Matches(snapshot)
+                ? $"The quality request changed (expected {quality.Label}, enabled {quality.Enabled}; observed gaze {snapshot.CenterOffset}, periphery {snapshot.PeripheralOffset}, enabled {snapshot.Enabled})."
+            : null;
+        if (reason is not null)
+            throw new IOException(reason + $" Last NVENC status: {snapshot.LastNvencStatus}. Starting-settings recovery remains available.");
     }
     internal static HashSet<string> OwnedKeys(BenchmarkLeaseData data, Dictionary<string, JsonElement> live) => Keys
         .Where(k => live.ContainsKey(k) && (MatchesControl(k,live,data.Expected,data.ExpectedAutomaticOwner) || MatchesControl(k,live,data.Previous,data.PreviousAutomaticOwner))).ToHashSet();

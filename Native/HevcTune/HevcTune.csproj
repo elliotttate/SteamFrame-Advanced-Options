@@ -14,10 +14,14 @@
     <Compile Include="../../SteamLinkVRSettings/Frame/AdvancedEncoding.cs" Link="AdvancedEncoding.cs" />
     <Compile Include="../../SteamLinkVRSettings/Frame/EncoderProbe.cs" Link="EncoderProbe.cs" />
     <Compile Include="../../SteamLinkVRSettings/Frame/EncoderProbe.Av1.cs" Link="EncoderProbe.Av1.cs" />
+    <Compile Include="../../SteamLinkVRSettings/Frame/EncoderProbe.SendMode.cs" Link="EncoderProbe.SendMode.cs" />
+    <Compile Include="../../SteamLinkVRSettings/Frame/SenderDriverLayout.cs" Link="SenderDriverLayout.cs" />
+    <Compile Include="../../SteamLinkVRSettings/Frame/PatchManifest.cs" Link="PatchManifest.cs" />
     <Compile Include="../../SteamLinkVRSettings/Frame/StreamCodecStatus.cs" Link="StreamCodecStatus.cs" />
     <Compile Include="../../SteamLinkVRSettings/Frame/PairedCodecIdentity.cs" Link="PairedCodecIdentity.cs" />
     <Compile Include="../../SteamLinkVRSettings/Frame/FoveationOffsets.cs" Link="FoveationOffsets.cs" />
     <Compile Include="../../SteamLinkVRSettings/Frame/OpenVrSettings.cs" Link="OpenVrSettings.cs" />
+    <Compile Include="../../SteamLinkVRSettings/Frame/RuntimeProcessState.cs" Link="RuntimeProcessState.cs" />
     <Compile Include="../../SteamLinkVRSettings/Frame/SteamPaths.cs" Link="SteamPaths.cs" />
     <Content Include="$(ProbeDll)" Link="Native/SteamFrameEncoderProbe.dll" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>

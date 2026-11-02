@@ -144,6 +144,7 @@ public sealed class BitratePatcher
         var hash = Hash(bytes);
         if (hash == SupportedOriginalSha256) return manifest;
         if (hash == SupportedCurrentOriginalSha256) return manifest.ForCurrentBuild();
+        if (hash == PatchManifest.Supported25998080OriginalSha256) return PatchManifest.Load25998080();
         if (hash == PatchManifest.SupportedStableOriginalSha256) return PatchManifest.LoadStable();
         return AdaptivePatchScanner.Discover(bytes);
     }
@@ -156,6 +157,7 @@ public sealed class BitratePatcher
         var hash = Hash(data);
         if (hash is SupportedOriginalSha256 or SupportedPatchedSha256) return manifest;
         if (hash is SupportedCurrentOriginalSha256 or SupportedCurrentPatchedSha256) return manifest.ForCurrentBuild();
+        if (hash is PatchManifest.Supported25998080OriginalSha256 or PatchManifest.Supported25998080PatchedSha256) return PatchManifest.Load25998080();
         if (hash is PatchManifest.SupportedStableOriginalSha256 or PatchManifest.SupportedStablePatchedSha256) return PatchManifest.LoadStable();
         try { return AdaptivePatchScanner.Discover(data); }
         catch (Exception ex) when (ex is InvalidDataException or OverflowException or InvalidOperationException)
@@ -249,7 +251,7 @@ public sealed class BitratePatcher
         {
             await WriteDurableAsync(temp, replacement, ct); await ReadVerifiedAsync(temp, plan, !restoring, ct);
             await ReadVerifiedAsync(path, plan, restoring, ct); await ReadVerifiedAsync(backup, plan, false, ct);
-            var receiptRequired = !restoring || plan.OriginalSha256 is not (SupportedOriginalSha256 or SupportedCurrentOriginalSha256 or PatchManifest.SupportedStableOriginalSha256);
+            var receiptRequired = !restoring || plan.OriginalSha256 is not (SupportedOriginalSha256 or SupportedCurrentOriginalSha256 or PatchManifest.SupportedStableOriginalSha256 or PatchManifest.Supported25998080OriginalSha256);
             if (receiptRequired || File.Exists(backup + ".patch.json")) RequireReceipt(await ReadReceiptAsync(backup + ".patch.json", ct), plan);
             ct.ThrowIfCancellationRequested(); EnsureVrServerStopped();
             File.Replace(temp, path, displaced, ignoreMetadataErrors: false); committed = true;

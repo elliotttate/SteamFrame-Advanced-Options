@@ -107,7 +107,7 @@ try {
     # Ship the release guides, keeping development investigations out of the package.
     $guideRoot = Join-Path $stageRoot 'docs'
     New-Item -ItemType Directory -Path $guideRoot -Force | Out-Null
-    foreach ($guide in @('auto-tune.md', 'advanced-controls.md', 'building.md', 'codec-modes.md', 'connection-setup.md', 'driver-patcher.md', 'hevc-high-quality.md', 'live-dashboard.md', 'settings-editor.md', 'stream-controls.md')) {
+    foreach ($guide in @('auto-tune.md', 'advanced-controls.md', 'building.md', 'codec-modes.md', 'connection-setup.md', 'driver-patcher.md', 'steamvr-25998080.md', 'hevc-high-quality.md', 'live-dashboard.md', 'settings-editor.md', 'stream-controls.md')) {
         Copy-Item -LiteralPath (Join-Path $PSScriptRoot "docs\$guide") -Destination $guideRoot
     }
     Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'docs\images') -Destination (Join-Path $guideRoot 'images') -Recurse

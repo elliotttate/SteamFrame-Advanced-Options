@@ -8,16 +8,36 @@ public sealed class BenchmarkRecoveryTests : IDisposable
     private string Journal => Path.Combine(_directory, "recovery.json");
     private BenchmarkSettingsLease Lease(Fake settings) => new(Paths, new EncoderProbe(), Journal, settings);
 
-    [Theory][InlineData("generation")][InlineData("quality")][InlineData("policy")]
-    public async Task ReconnectRefusesAnEncoderOwnedByAnotherController(string change)
+    [Theory]
+    [InlineData("generation", "session changed")]
+    [InlineData("quality", "quality request changed")]
+    [InlineData("policy", "encoder request changed")]
+    public async Task ReconnectReportsTheFailedOwnershipInvariant(string change, string reason)
     {
         var backend=new Fake();var lease=Lease(backend);await lease.BeginAsync(await backend.Snapshot());
         await lease.CheckEncoderOwnershipAsync();
         if(change=="generation")backend.Generation="replacement";
         else if(change=="quality")backend.QualityValue=new(true,-4,0);
         else backend.Request=new(EncoderRateControl.Vbr,EncoderMultiPass.SinglePass);
-        await Assert.ThrowsAsync<IOException>(lease.CheckEncoderOwnershipAsync);
+        var error = await Assert.ThrowsAsync<IOException>(lease.CheckEncoderOwnershipAsync);
+        Assert.Contains(reason, error.Message);
+        Assert.Contains("Last NVENC status", error.Message);
         Assert.True(lease.Pending);
+    }
+
+    [Fact] public async Task ChangedEncoderCannotWriteTheNextTrialAndReportsNvencFailure()
+    {
+        var backend = new Fake(); var lease = Lease(backend);
+        await lease.BeginAsync(await backend.Snapshot());
+        backend.Generation = "replacement"; backend.LastNvencStatus = 8;
+        var journal = await File.ReadAllTextAsync(Journal);
+        var error = await Assert.ThrowsAsync<IOException>(() => lease.ApplyAsync(
+            new(200, EncoderMultiPass.SinglePass, false), 2048,
+            new(EncoderRateControl.Cbr, EncoderMultiPass.SinglePass)));
+        Assert.Contains("Last NVENC status: 8", error.Message);
+        Assert.Equal(journal, await File.ReadAllTextAsync(Journal));
+        Assert.Single(backend.Overrides);
+        Assert.Equal(400, backend.Overrides["targetBandwidth"].GetDouble());
     }
 
     [Fact] public async Task RestoresAbsentOverridesAndOriginalPolicyAfterCompletedRun()
@@ -200,6 +220,7 @@ public sealed class BenchmarkRecoveryTests : IDisposable
         public int ProcessId=10;
         public bool NeedsNewSession;
         public bool RefreshCreatesTarget;
+        public uint LastNvencStatus;
         public AdvancedEncoding AdvancedValue=new();
         public BenchmarkQuality QualityValue = new(true,-20,-12);
         public Task<Dictionary<string, JsonElement>> Saved() => Task.FromResult(new Dictionary<string, JsonElement>(Overrides));
@@ -222,7 +243,7 @@ public sealed class BenchmarkRecoveryTests : IDisposable
         }
         public Task Remove(IEnumerable<string> keys) { foreach (var key in keys) Overrides.Remove(key); return Task.CompletedTask; }
         public Task<EncoderSnapshot> Snapshot() => Task.FromResult(new EncoderSnapshot { Installed = true, Generation = Generation, ProcessId=ProcessId, EncodingPolicy = new() { Requested = Request, NeedsNewSession=NeedsNewSession },AdvancedEncoding=new(){Requested=AdvancedValue},
-            Enabled=QualityValue.Enabled, CenterOffset=QualityValue.GazeOffset,PeripheralOffset=QualityValue.PeripheralOffset });
+            LastNvencStatus=LastNvencStatus, Enabled=QualityValue.Enabled, CenterOffset=QualityValue.GazeOffset,PeripheralOffset=QualityValue.PeripheralOffset });
         public Task<EncoderSnapshot> Policy(EncodingPolicy value) { Request = value; return Snapshot(); }
         public Task<EncoderSnapshot> Quality(BenchmarkQuality value) { QualityValue=value;return Snapshot(); }
         public Task<EncoderSnapshot> Advanced(AdvancedEncoding value) {AdvancedValue=value;return Snapshot();}

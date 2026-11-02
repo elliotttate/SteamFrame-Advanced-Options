@@ -28,6 +28,7 @@
   <ItemGroup>
     <EmbeddedResource Include="Assets\bitrate-patch.json" />
     <EmbeddedResource Include="Assets\bitrate-patch-stable.json" />
+    <EmbeddedResource Include="Assets\bitrate-patch-25998080.json" />
     <Content Include="$(NativeHelperPath)" Link="Native\SteamFrameEncoderProbe.dll" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" Condition="Exists('$(NativeHelperPath)')" />
     <Content Include="..\Native\build\SteamFrameBenchmark.exe" Link="Native\SteamFrameBenchmark.exe" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" Condition="Exists('..\Native\build\SteamFrameBenchmark.exe')" />
   </ItemGroup>

@@ -22,8 +22,7 @@ public sealed partial class EncoderProbe
         if (process.Id != session.ProcessId) throw new IOException("SteamVR changed while checking the sender.");
         var driver = ReadModules(process).Single(m => m.Name.Equals("driver_vrlink.dll", StringComparison.OrdinalIgnoreCase));
         var hash = FileHash(driver.Path);
-        if (hash != BitratePatcher.SupportedCurrentOriginalSha256 && hash != BitratePatcher.SupportedCurrentPatchedSha256)
-            throw new IOException("This driver needs an updated active-sender observer before auto tune can verify its settings.");
+        var layout = SenderDriverLayout.Resolve(hash);
         using var handle = OpenProcess(0x410, false, process.Id);
         if (handle.IsInvalid) ThrowWin32();
         ValidateIdentity(handle, session.CreationTime);
@@ -39,9 +38,14 @@ public sealed partial class EncoderProbe
         bool InImage(nint address, int size) => address >= driver.Base && (long)address - (long)driver.Base <= driver.Size - size;
         using var file = File.OpenRead(driver.Path);
         using var pe = new PEReader(file);
-        foreach (var rva in new[] { 0xA48170, 0xA4A510 })
-            if (!InImage(driver.Base + rva, 32) || !Read(driver.Base + rva, 32).SequenceEqual(pe.GetSectionData(rva).GetContent(0, 32)))
-                throw new IOException("The live sender implementation does not match the verified driver.");
+        foreach (var (rva, length) in layout.CodeRanges)
+            for (int at = 0; at < length; at += 32)
+            {
+                var count = Math.Min(32, length - at);
+                if (!InImage(driver.Base + rva + at, count) ||
+                    !Read(driver.Base + rva + at, count).SequenceEqual(pe.GetSectionData(rva + at).GetContent(0, count)))
+                    throw new IOException("The live sender implementation does not match the verified driver.");
+            }
         void Type(nint instance, string expected)
         {
             var table = Pointer(instance);
@@ -56,11 +60,11 @@ public sealed partial class EncoderProbe
             if (Encoding.ASCII.GetString(Read(descriptor + 16, 96)).Split('\0')[0] != expected)
                 throw new IOException("Unexpected active sender type.");
         }
-        var server = Pointer(driver.Base + 0x179d840); Type(server, ".?AVSVLServer@@");
+        var server = Pointer(driver.Base + layout.ServerRva); Type(server, ".?AVSVLServer@@");
         var link = Pointer(server + 392); Type(link, ".?AVSVLDataLinkUber@@");
         var fec = Pointer(link + 16); Type(fec, ".?AVSVLFECRAID6@@");
         var mode = Read(fec + 16, 1)[0];
-        if (mode > 1 || Pointer(fec + 3568) != server || Pointer(driver.Base + 0x179d840) != server ||
+        if (mode > 1 || Pointer(fec + 3568) != server || Pointer(driver.Base + layout.ServerRva) != server ||
             Pointer(server + 392) != link || Pointer(link + 16) != fec || Read(fec + 16, 1)[0] != mode)
             throw new IOException("The sender changed while being measured.");
         ValidateIdentity(handle, session.CreationTime);

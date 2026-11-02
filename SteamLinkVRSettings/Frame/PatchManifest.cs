@@ -11,6 +11,8 @@ public sealed class PatchManifest
     public const string SupportedPatchedSha256 = "82fd637f1d4b844ca349d2a98867cd0ba8f969a14de47c2a3192b875fb62425d";
     public const string SupportedCurrentOriginalSha256 = "d415ba30fab129b4737ae19a3c71d7628c27e450dd8bf0002a1d4dd98ed58a05";
     public const string SupportedCurrentPatchedSha256 = "34265101d56235e2f87e5b0e2f3fc2340ed1513a9b6d26f03c4fe12bafcbbc03";
+    public const string Supported25998080OriginalSha256 = "8e7100b6b1e88d3ad6dd05f30f030dc9a69b092b64a60d35347cebb5c516b55d";
+    public const string Supported25998080PatchedSha256 = "1c4290b55f012d7bf2c427117a25455a0ed54ee9dce15e3ab2f2ae407a8aa354";
     public const string SupportedStableOriginalSha256 = "1e846be041039798580a91452371f6288c614fb4c152126b137e2c693fb77eef";
     public const string SupportedStablePatchedSha256 = "d0aeec1b80d31da146365b4b65fa4adadd7230d288ebf0d65e040b3991f28c5e";
     public const int SupportedFileLength = 13927576;
@@ -58,6 +60,16 @@ public sealed class PatchManifest
         var result = Read(resource, requirePinned: false);
         if (result.FileLength != 13908632 || result.OriginalSha256 != SupportedStableOriginalSha256 || result.PatchedSha256 != SupportedStablePatchedSha256)
             throw new InvalidDataException("The manifest does not describe the verified stable SteamVR patch.");
+        return result;
+    }
+
+    public static PatchManifest Load25998080()
+    {
+        using var resource = typeof(PatchManifest).Assembly.GetManifestResourceStream("SteamLinkVRSettings.Assets.bitrate-patch-25998080.json")
+            ?? File.OpenRead(Path.Combine(AppContext.BaseDirectory, "Assets", "bitrate-patch-25998080.json"));
+        var result = Read(resource, requirePinned: false);
+        if (result.FileLength != 13928600 || result.OriginalSha256 != Supported25998080OriginalSha256 || result.PatchedSha256 != Supported25998080PatchedSha256)
+            throw new InvalidDataException("The manifest does not describe the verified SteamVR 25998080 patch.");
         return result;
     }
 

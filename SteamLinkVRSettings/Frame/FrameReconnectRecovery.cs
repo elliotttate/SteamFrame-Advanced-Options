@@ -10,7 +10,8 @@ public static class FrameReconnectRecovery
         Func<EncoderSnapshot, EncoderSnapshot, Task<EncoderSnapshot>> prepare,
         Action<string> progress, CancellationToken token = default,
         int driverAttempts = 80, int videoAttempts = 60,
-        Func<CancellationToken, Task>? wait = null)
+        Func<CancellationToken, Task>? wait = null,
+        Func<CancellationToken, Task>? resumeVideoOnce = null)
     {
         wait ??= cancellation => Task.Delay(500, cancellation);
         token.ThrowIfCancellationRequested();
@@ -44,17 +45,25 @@ public static class FrameReconnectRecovery
         CheckReplacement(previous, ready.ProcessId);
         if (!previous.Installed)
             throw new InvalidOperationException("SteamVR restarted, but video monitoring could not start. " + previous.Message);
-        for (var attempt = 0; attempt < videoAttempts; attempt++)
+        for (var connectionAttempt = 0; ; connectionAttempt++)
         {
-            await wait(token);
+            for (var attempt = 0; attempt < videoAttempts; attempt++)
+            {
+                await wait(token);
+                token.ThrowIfCancellationRequested();
+                var current = await read();
+                CheckReplacement(current, ready.ProcessId);
+                if (FreshVideo(previous, current)) return new(current, true);
+                previous = current;
+            }
+            // A completed process restart is not evidence that the headset reconnected.
+            // Retry only the client connection, once, before any measurement starts.
+            if (connectionAttempt != 0 || resumeVideoOnce is null) return new(previous, false);
             token.ThrowIfCancellationRequested();
-            var current = await read();
-            CheckReplacement(current, ready.ProcessId);
-            if (FreshVideo(previous, current)) return new(current, true);
-            previous = current;
+            await resumeVideoOnce(token);
+            previous = await read();
+            CheckReplacement(previous, ready.ProcessId);
         }
-        // A completed process restart is not evidence that the headset reconnected.
-        return new(previous, false);
     }
 
     private static void CheckOwnership(EncoderSnapshot snapshot)

@@ -79,6 +79,22 @@ The portable app launched and installed the new driver's exact expected patch
 with a verified matching original backup. The active sender reader succeeded on
 a real connected HEVC stream from 25998080. Initial full-run attempts exposed
 the launch and client-reconnection problems above; their starting settings were
-recovered. **A complete auto tune run on 25998080 has not yet been verified.**
-This build must not be described as having completed hardware tuning until the
-full run and restoration are checked.
+recovered. The corrected build then completed the full default comparison on
+the connected Frame in **26:21**, reaching **100%** with **70 trials, 69 valid**,
+and three saved, confirmed choices. One trial lost consistent stream/receiver
+measurements and was excluded; it was not treated as a passing result. The run
+finished with `Recommendations ready`, no terminal error and no pending recovery.
+
+Readback verified the starting 400 Mbps target, 1664-pixel width, asynchronous
+sending, CBR quarter-resolution multipass, enabled gaze -2 / periphery -6,
+and the headset's actual 90 Hz display. Requested and accepted encoder policy
+matched; encode/lock error counts and the last NVENC status were zero in the
+restored session. Both benchmark recovery journals and the temporary power
+lease were absent. No recommendation was applied automatically.
+
+All three final choices passed the configured serious-issue threshold. The
+higher-refresh choice retained a small delivery-hitch warning in its notes;
+completion does not mean every tested configuration was hitch-free. This is a
+hardware check of this specific driver/setup, not a guarantee for every game,
+GPU, wireless environment or future SteamVR update. The personal benchmark
+report and device identifiers are not included in the repository or release.
